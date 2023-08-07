@@ -1,23 +1,25 @@
 #!/bin/bash
 
 function spawn_model() {
+        #robot model: "iris", "plane", "standard_vtol", "rover", "r1_rover", "typhoon_h480"
 	MODEL="iris"
-	N=1
+
+        #spawn position
 	X=0
 	Y=0
+        Z=0.83
 
-	set --
-	set -- ${@} $PWD/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/scripts/jinja_gen.py
-	set -- ${@} $PWD/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models/${MODEL}/${MODEL}.sdf.jinja
-	set -- ${@} $PWD/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic 
-	set -- ${@} --mavlink_tcp_port 4560 
+	set -- ${@} ${GAZEBO_CLASSIC}/scripts/jinja_gen.py
+	set -- ${@} ${GAZEBO_CLASSIC}/models/${MODEL}/${MODEL}.sdf.jinja
+	set -- ${@} ${GAZEBO_CLASSIC}/
+        set -- ${@} --mavlink_tcp_port 4560 
 	set -- ${@} --output-file /tmp/${MODEL}.sdf
 
 	python3 ${@}
 
-	echo "Spawning ${MODEL}_${N} at (${X}, ${Y})"
+	echo "Spawning ${MODEL} at (${X}, ${Y})"
 
-	gz model --spawn-file=/tmp/${MODEL}.sdf --model-name=${MODEL} -x ${X} -y ${Y} -z 0.83
+	gz model --spawn-file=/tmp/${MODEL}.sdf --model-name=${MODEL} -x ${X} -y ${Y} -z ${Z}
 }
 
 function cleanup() {
@@ -25,21 +27,24 @@ function cleanup() {
 	pkill gzserver
 }
 
-world=empty
+world=empty.world
 
-export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:$PWD/PX4-Autopilot/build/px4_sitl_default/build_gazebo-classic
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$PWD/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/PX4-Autopilot/build/px4_sitl_default/build_gazebo-classic
+GAZEBO_CLASSIC=${PWD}/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic
+GAZEBO_BUILD=${PWD}/PX4-Autopilot/build/px4_sitl_default/build_gazebo-classic
 
-echo -e "GAZEBO_PLUGIN_PATH $GAZEBO_PLUGIN_PATH"
-echo -e "GAZEBO_MODEL_PATH $GAZEBO_MODEL_PATH"
-echo -e "LD_LIBRARY_PATH $LD_LIBRARY_PATH"
+export GAZEBO_PLUGIN_PATH=${GAZEBO_PLUGIN_PATH}:${GAZEBO_BUILD}
+export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:${GAZEBO_CLASSIC}/models
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${GAZEBO_CLASSIC}
+
+echo -e "GAZEBO_PLUGIN_PATH ${GAZEBO_PLUGIN_PATH}"
+echo -e "GAZEBO_MODEL_PATH ${GAZEBO_MODEL_PATH}"
+echo -e "LD_LIBRARY_PATH ${LD_LIBRARY_PATH}"
 echo -e ""
 
 trap "cleanup" SIGINT SIGTERM EXIT
 
 echo "Starting gazebo server"
-gzserver $PWD/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/${world}.world --verbose &
+gzserver ${GAZEBO_CLASSIC}/worlds/${world} --verbose &
 sleep 5
 
 spawn_model
