@@ -7,8 +7,7 @@ Build:
 ```
 git clone https://github.com/Tenok-RTOS/gazebo.git
 cd gazebo
-git submodule init
-git submodule update --recursive
+git submodule update --init --recursive
 cd PX4-Autopilot
 make px4_sitl_default gazebo
 ```
